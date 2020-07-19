@@ -19,7 +19,7 @@ func main() {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("", gocui.KeyEsc, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyEnd, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
@@ -42,11 +42,30 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Wrap = true
 		v.Frame = false
-		fmt.Fprintln(v, "esc - quit  f2 - connect  f3 - disconnect  f4 - file info  f5 - reload directory  "+
-			"arrow keys - move  enter - open options  shift - change side")
+		cmds := []string{"\u001b[47m\u001b[30mend\u001b[0m\u001b[0m quit ",
+			"\u001b[47m\u001b[30mfn2\u001b[0m\u001b[0m file info ",
+			"\u001b[47m\u001b[30mfn3\u001b[0m\u001b[0m reload dir\n",
+			"\u001b[47m\u001b[30marrow keys\u001b[0m\u001b[0m move ",
+			"\u001b[47m\u001b[30menter\u001b[0m\u001b[0m options ",
+			"\u001b[47m\u001b[30mshift\u001b[0m\u001b[0m change side "}
+		for _, cmd := range cmds {
+			fmt.Fprint(v, cmd)
+		}
+		//fmt.Fprintln(v, "end - quit  f2 - file info  f3 - reload directory  "+
+		//	"arrow keys - move  enter - open options  shift - change side")
 	}
-	panel.LocalInitialize(g)
-	panel.RemoteInitialize(g)
+	if localview, err := g.SetView("local", 0, 1, maxX/2-1, maxY-3); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		panel.LocalInitialize(g, localview)
+	}
+	if remoteview, err := g.SetView("remote", maxX/2, 1, maxX-1, maxY-3); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		panel.RemoteInitialize(g, remoteview)
+	}
 	g.SetCurrentView("local")
 	return nil
 }
